@@ -1,5 +1,6 @@
 // sudo-prompt from https://github.com/bpasero/sudo-prompt/tree/vscode
-// but it doesn't do anything
+// but it runs the command without escalating
+
 var Node = {
   child: require('child_process'),
   crypto: require('crypto'),
@@ -118,16 +119,20 @@ function Exec() {
   if (platform !== 'darwin' && platform !== 'linux' && platform !== 'win32') {
     return end(new Error('Platform not yet supported.'));
   }
-  console.log("Call", command, options, "manually")
-  /*
   var instance = {
     command: command,
     options: options,
     uuid: undefined,
     path: undefined
   };
-  Attempt(instance, end);
-  */
+  Node.child.exec(command, { encoding: 'utf-8', maxBuffer: MAX_BUFFER },
+    function(error, stdout, stderr) {
+      //if (error) return(end(new Error(PERMISSION_DENIED)))
+    }
+  )
+  console.log("cmd:", command)
+  end()
+  //Attempt(instance, end);
 }
 
 function Linux(instance, end) {
@@ -455,9 +460,6 @@ function ValidName(string) {
 }
 
 function Windows(instance, callback) {
-  console.log("Intercepted attempt to elevate on windows!");
-  callback(null);
-  /*
   var temp = Node.os.tmpdir();
   if (!temp) return callback(new Error('os.tmpdir() not defined.'));
   UUID(instance,
@@ -515,13 +517,11 @@ function Windows(instance, callback) {
       );
     }
   );
-  */
 }
 
 function WindowsElevate(instance, end) {
   // We used to use this for executing elevate.vbs:
   // var command = 'cscript.exe //NoLogo "' + instance.pathElevate + '"';
-  console.log("Call to WindowsElevate (from @vscode/sudo-prompt)");
   var command = [];
   command.push('powershell.exe');
   command.push('Start-Process');
@@ -541,11 +541,7 @@ function WindowsElevate(instance, end) {
       // error messages (issue 96) so now we must assume all errors here are
       // permission errors. This seems reasonable, given that we already run the
       // user's command in a subshell.
-      if (error){
-        console.log("Error blocked to save issues w/ NA.")
-        console.log(error)
-      }
-      //if (error) return end(new Error(PERMISSION_DENIED), stdout, stderr);
+      if (error) return end(new Error(PERMISSION_DENIED), stdout, stderr);
       end();
     }
   );
@@ -600,7 +596,7 @@ function WindowsWaitForStatus(instance, end) {
             // We check that command output has been redirected to stdout file:
             Node.fs.stat(instance.pathStdout,
               function(error) {
-                //if (error) return end(new Error(PERMISSION_DENIED));
+                if (error) return end(new Error(PERMISSION_DENIED));
                 WindowsWaitForStatus(instance, end);
               }
             );
@@ -614,7 +610,6 @@ function WindowsWaitForStatus(instance, end) {
       }
     }
   );
-  console.log("WindowsWaitForStatus sucess!")
 }
 
 function WindowsWriteCommandScript(instance, end) {
