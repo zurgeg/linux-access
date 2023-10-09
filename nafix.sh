@@ -9,3 +9,4 @@ echo "Exec=WINEPREFIX=$WINEPREFIX wine \"%ProgramFiles%/Native Instruments/Nativ
 echo "Type=Application" >> ~/.local/share/applications/na-workaround.desktop
 echo "Terminal=false" >> ~/.local/share/applications/na-workaround.desktop
 echo "MimeType=x-scheme-handler/native-access;" >> ~/.local/share/applications/na-workaround.desktop
+xdg-desktop-menu install ~/.local/share/applications/na-workaround.desktop
